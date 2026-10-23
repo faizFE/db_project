@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\approveModel;
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +31,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -38,20 +41,66 @@ class LoginRequest extends FormRequest
      *
      * @throws ValidationException
      */
+
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        $login = $this->input('email');
+
+        $field = filter_var($login, FILTER_VALIDATE_EMAIL)
+            ? 'email'
+            : 'username';
+
+        $user = User::where($field, $login)->first();
+
+        if (
+            ! $user ||
+            ! Hash::check(
+                $this->input('password'),
+                $user->password
+            )
+        ) {
+            RateLimiter::hit(
+                $this->throttleKey()
+            );
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
 
-        RateLimiter::clear($this->throttleKey());
+        $approval = approveModel::where('user_id', $user->id)->first();
+
+        $isUser = $user->role === 'user';
+
+
+        if ($isUser && (!$approval || $approval->status === 'pending')) {
+            throw ValidationException::withMessages([
+                'email' => 'Akun kamu belum disetujui oleh admin.',
+            ]);
+        }
+
+        if ($isUser && $approval->status === 'rejected') {
+            throw ValidationException::withMessages([
+                'email' => 'Akun kamu ditolak oleh admin.',
+            ]);
+        }
+
+
+
+        Auth::login(
+            $user,
+            $this->boolean('remember')
+        );
+
+        request()->session()->regenerate();
+
+        RateLimiter::clear(
+            $this->throttleKey()
+        );
     }
+
 
     /**
      * Ensure the login request is not rate limited.
@@ -81,6 +130,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
     }
 }

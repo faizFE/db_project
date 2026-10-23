@@ -7,8 +7,9 @@
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" placeholder="Masukkan Email" required autofocus autocomplete="username" />
+            <x-input-label for="email" :value="__('Email atau username')" />
+            <x-text-input id="email" class="block mt-1 w-full" type="text" name="email" :value="old('email')"
+                placeholder="Masukkan Email atau username" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
@@ -16,11 +17,8 @@
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password"
-                            placeholder="Masukkan Password" />
+            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required
+                autocomplete="current-password" placeholder="Masukkan Password" />
 
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
@@ -33,16 +31,33 @@
             </label>
         </div> --}}
 
-        <div class="flex flex-col items-start mt-3">
+        <div class="flex flex-row justify-between mt-3">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-black dark:text-black hover:text-gray-900 dark:hover:text-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('password.request') }}">
+                <a class="underline text-sm text-black dark:text-black hover:text-gray-900 dark:hover:text-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                    href="{{ route('password.request') }}">
                     {{ __('Lupa Password') }}
                 </a>
             @endif
 
-            <x-primary-button>
-                {{ __('Log in') }}
-            </x-primary-button>
+            <a class="underline text-sm text-black dark:text-black hover:text-gray-900 dark:hover:text-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                href="{{ route('register') }}">
+                {{ __('belum daftar?') }}
+            </a>
+
         </div>
+        <x-primary-button>
+            {{ __('Log in') }}
+        </x-primary-button>
     </form>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @if (session('success'))
+        <script>
+            Swal.fire({
+                title: 'Berhasil',
+                text: '{{ session('success') }}',
+                icon: 'success'
+            });
+        </script>
+    @endif
 </x-guest-layout>

@@ -20,8 +20,22 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'username',
         'password',
+        'role'
     ];
+
+    public function barangMasuk() {
+        return $this->hasMany(barangMasukModel::class, 'user_id', 'id');
+    }
+
+    public function barangkeluar() {
+        return $this->hasMany(barangKeluarModel::class, 'user_id', 'id');
+    }
+
+    public function penyesuaian() {
+        return $this->hasMany(penyesuaianModel::class, 'user_id', 'id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
